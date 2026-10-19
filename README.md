@@ -4,7 +4,7 @@
 
 ## 安装
 
-运行 `npm install`、`npm run package`，然后在 VS Code 中执行“Extensions: Install from VSIX”，选择生成的 `ai-git-commit-0.1.3.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展。也可在源码目录按 F5 启动 Extension Development Host。
+运行 `npm install`、`npm run package`，然后在 VS Code 中执行“Extensions: Install from VSIX”，选择生成的 `ai-git-commit-0.1.4.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展。也可在源码目录按 F5 启动 Extension Development Host。
 
 ## 首次配置
 
@@ -26,24 +26,24 @@
 
 ## 设置
 
-| 设置                              | 默认值       | 说明                                                   |
-| --------------------------------- | ------------ | ------------------------------------------------------ |
-| `aiGitCommit.provider`            | `custom`     | 服务商预设或自定义                                     |
-| `aiGitCommit.baseUrl`             | 空           | 自定义服务商的 API 根地址                              |
-| `aiGitCommit.model`               | 空           | 模型 ID；预设可能有默认值                              |
-| `aiGitCommit.language`            | `zh-CN`      | 输出语言                                               |
-| `aiGitCommit.timeout`             | `120000`     | 单次请求超时，毫秒                                     |
-| `aiGitCommit.temperature`         | `0.2`        | 温度值                                                 |
-| `aiGitCommit.sendTemperature`     | `false`      | 显式发送温度参数；兼容性需要时开启                     |
-| `aiGitCommit.maxDiffLength`       | `30000`      | 单次差异处理字符预算                                   |
-| `aiGitCommit.maxContextTokens`    | `16000`      | 单次请求近似 Token 预算                                |
-| `aiGitCommit.maxSummaryCalls`     | `10`         | 局部摘要默认上限；超出时可选择仅本次继续               |
-| `aiGitCommit.autoFill`            | `true`       | 是否自动填写 SCM                                       |
-| `aiGitCommit.confirmOverwrite`    | `true`       | 覆盖已有消息时确认                                     |
-| `aiGitCommit.conventionalCommits` | `true`       | 校验 Conventional Commits                              |
-| `aiGitCommit.outputFormat`        | `singleLine` | `singleLine` 单行；`prompt` 由提示词定义格式，允许多行 |
-| `aiGitCommit.promptFile`          | 空           | 提示词文件路径；相对路径按所选仓库根目录解析           |
-| `aiGitCommit.customPrompt`        | 空           | 附加生成规则                                           |
+| 设置                              | 默认值       | 说明                                                         |
+| --------------------------------- | ------------ | ------------------------------------------------------------ |
+| `aiGitCommit.provider`            | `custom`     | 服务商预设或自定义                                           |
+| `aiGitCommit.baseUrl`             | 空           | 自定义服务商的 API 根地址                                    |
+| `aiGitCommit.model`               | 空           | 模型 ID；预设可能有默认值                                    |
+| `aiGitCommit.language`            | `zh-CN`      | 输出语言                                                     |
+| `aiGitCommit.timeout`             | `120000`     | 单次请求超时，毫秒                                           |
+| `aiGitCommit.temperature`         | `0.2`        | 温度值                                                       |
+| `aiGitCommit.sendTemperature`     | `false`      | 显式发送温度参数；兼容性需要时开启                           |
+| `aiGitCommit.maxDiffLength`       | `30000`      | 单次差异处理字符预算                                         |
+| `aiGitCommit.maxContextTokens`    | `16000`      | 单次请求近似 Token 预算                                      |
+| `aiGitCommit.maxSummaryCalls`     | `10`         | 局部摘要及必要压缩的请求上限；初始分组超限时可选择仅本次继续 |
+| `aiGitCommit.autoFill`            | `true`       | 是否自动填写 SCM                                             |
+| `aiGitCommit.confirmOverwrite`    | `true`       | 覆盖已有消息时确认                                           |
+| `aiGitCommit.conventionalCommits` | `true`       | 校验 Conventional Commits                                    |
+| `aiGitCommit.outputFormat`        | `singleLine` | `singleLine` 单行；`prompt` 由提示词定义格式，允许多行       |
+| `aiGitCommit.promptFile`          | 空           | 提示词文件路径；相对路径按所选仓库根目录解析                 |
+| `aiGitCommit.customPrompt`        | 空           | 附加生成规则                                                 |
 
 配置变更会在下次请求时生效。只有 API Key 通过命令存入 SecretStorage，绝不在设置里填写。
 
@@ -65,7 +65,7 @@
 
 ## 大型差异与隐私
 
-扩展按文件提取所选差异和增删行数。小差异一次生成；大型差异按完整行与近似 Token 预算分组，逐组生成事实摘要，再根据全部摘要和文件清单汇总。Token 估算用于分组，实际用量以服务商计算为准。依赖锁文件（如 `package-lock.json`、`pnpm-lock.yaml`）只发送文件名与变更统计，不发送完整补丁；扩展会提示这一分析限制，依赖意图由同批变更的清单文件辅助判断。二进制文件同样只能分析文件级元数据。超过局部摘要次数上限时，扩展会在请求前告知预计调用次数，并允许仅本次继续；单行预算、单文件 32 MiB 读取限制或过高的请求次数仍会明确报错。每次模型请求都可能收费。
+扩展按文件提取所选差异和增删行数。小差异一次生成；大型差异按完整行与近似 Token 预算分组，逐组生成事实摘要，再根据全部摘要和文件清单汇总。局部摘要没有固定长度上限：总量适合最终请求时直接使用；超出最终预算时才调用模型压缩摘要，不重复发送原始代码差异。摘要及压缩合计受 `maxSummaryCalls` 限制，预算或次数仍不足时会明确报错。Token 估算用于分组，实际用量以服务商计算为准。依赖锁文件（如 `package-lock.json`、`pnpm-lock.yaml`）只发送文件名与变更统计，不发送完整补丁；扩展会提示这一分析限制，依赖意图由同批变更的清单文件辅助判断。二进制文件同样只能分析文件级元数据。初始局部摘要分组超过次数上限时，扩展会在请求前告知预计调用次数，并允许仅本次继续；单行预算、单文件 32 MiB 读取限制或过高的请求次数仍会明确报错。每次模型请求都可能收费。
 
 **所选仓库的暂存差异，或在暂存区为空时的未暂存及未跟踪文件内容，会发送到所选服务商的 API 地址。** 使用自定义 Base URL 时，请自行确认服务商的隐私政策和费用。扩展日志仅记录固定事件，不记录密钥、请求体、响应体或代码差异。Git 差异被当作不可信数据，提示词要求模型忽略其中的指令。
 
