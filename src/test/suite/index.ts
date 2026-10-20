@@ -52,6 +52,10 @@ export async function run(): Promise<void> {
   const priorOutputFormat = configuration.get<string>('outputFormat');
   const priorPromptFile = configuration.get<string>('promptFile');
   const priorFetch = globalThis.fetch;
+  // Extension Host 中的其他扩展也会调用全局 fetch，只拦截本测试的模型请求。
+  const isMockRequest = (url: string | URL | Request, init?: RequestInit): boolean =>
+    /^https:\/\/(?:example|attacker)\.test\//.test(String(url)) ||
+    new Headers(init?.headers).get('Authorization') === 'Bearer mock-key';
   const handler = new CommitCommands(
     { get: async () => 'mock-key' } as unknown as ApiKeyManager,
     () => {},
@@ -65,11 +69,9 @@ export async function run(): Promise<void> {
     );
     await configuration.update('model', 'mock-model', vscode.ConfigurationTarget.Workspace);
     let requests = 0;
-    const requestKinds: string[] = [];
     globalThis.fetch = async (url, init) => {
+      if (!isMockRequest(url, init)) return priorFetch(url, init);
       requests++;
-      const body = JSON.parse(String(init?.body)) as { messages: { content: string }[] };
-      requestKinds.push(body.messages[0].content.slice(0, 80));
       assert.equal(
         url,
         'https://example.test/v1/chat/completions',
@@ -81,11 +83,7 @@ export async function run(): Promise<void> {
     await handler.generate({ rootUri: repo.rootUri });
     assert.equal(repo.inputBox.value, 'feat(test): 添加暂存文件测试');
     assert.equal(other.inputBox.value, otherPrior, '模型结果不得填写到 B 仓库');
-    assert.equal(
-      requests,
-      1,
-      `请求类型：${JSON.stringify(requestKinds)}；差异：${JSON.stringify(diff.files.map((file) => [file.path, file.patch.length]))}`,
-    );
+    assert.equal(requests, 1);
     assert.throws(
       () =>
         execFileSync('git', ['-C', repo.rootUri.fsPath, 'rev-parse', '--verify', 'HEAD'], {
@@ -99,7 +97,8 @@ export async function run(): Promise<void> {
     const requestStarted = new Promise<void>((resolve) => {
       started = resolve;
     });
-    globalThis.fetch = async (_input, init) => {
+    globalThis.fetch = async (url, init) => {
+      if (!isMockRequest(url, init)) return priorFetch(url, init);
       requests++;
       started();
       return new Promise<Response>((_resolve, reject) =>
@@ -117,7 +116,8 @@ export async function run(): Promise<void> {
     await configuration.update('outputFormat', 'prompt', vscode.ConfigurationTarget.Workspace);
     await configuration.update('promptFile', 'CODEBUDDY.md', vscode.ConfigurationTarget.Workspace);
     const detailed = 'feat(test): 添加暂存文件测试\n\n- 新增测试文件\n- 验证仓库输入框';
-    globalThis.fetch = async (_input, init) => {
+    globalThis.fetch = async (url, init) => {
+      if (!isMockRequest(url, init)) return priorFetch(url, init);
       const body = JSON.parse(String(init?.body)) as { messages: { content: string }[] };
       assert.ok(body.messages[0].content.includes('空一行后列出受影响功能'));
       return Response.json({ choices: [{ message: { content: detailed } }] });
@@ -129,7 +129,8 @@ export async function run(): Promise<void> {
     execFileSync('git', ['-C', other.rootUri.fsPath, 'rm', '--cached', '-q', '集成测试.ts']);
     const working = await new GitService().preferredDiff(other.rootUri.fsPath);
     assert.equal(working.source, 'workingTree');
-    globalThis.fetch = async (_input, init) => {
+    globalThis.fetch = async (url, init) => {
+      if (!isMockRequest(url, init)) return priorFetch(url, init);
       const body = JSON.parse(String(init?.body)) as { messages: { content: string }[] };
       assert.match(body.messages.at(-1)?.content ?? '', /Git 工作区未暂存变更总计/);
       return Response.json({ choices: [{ message: { content: detailed } }] });
@@ -152,7 +153,8 @@ export async function run(): Promise<void> {
     writeFileSync(join(repo.rootUri.fsPath, '.env'), 'DUMMY=1\n');
     execFileSync('git', ['-C', repo.rootUri.fsPath, 'add', '.env']);
     let unsafeRequests = 0;
-    globalThis.fetch = async () => {
+    globalThis.fetch = async (url, init) => {
+      if (!isMockRequest(url, init)) return priorFetch(url, init);
       unsafeRequests++;
       return Response.json({ choices: [{ message: { content: detailed } }] });
     };
