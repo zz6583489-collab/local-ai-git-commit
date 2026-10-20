@@ -65,8 +65,11 @@ export async function run(): Promise<void> {
     );
     await configuration.update('model', 'mock-model', vscode.ConfigurationTarget.Workspace);
     let requests = 0;
+    const requestKinds: string[] = [];
     globalThis.fetch = async (url, init) => {
       requests++;
+      const body = JSON.parse(String(init?.body)) as { messages: { content: string }[] };
+      requestKinds.push(body.messages[0].content.slice(0, 80));
       assert.equal(
         url,
         'https://example.test/v1/chat/completions',
@@ -78,7 +81,11 @@ export async function run(): Promise<void> {
     await handler.generate({ rootUri: repo.rootUri });
     assert.equal(repo.inputBox.value, 'feat(test): 添加暂存文件测试');
     assert.equal(other.inputBox.value, otherPrior, '模型结果不得填写到 B 仓库');
-    assert.equal(requests, 1);
+    assert.equal(
+      requests,
+      1,
+      `请求类型：${JSON.stringify(requestKinds)}；差异：${JSON.stringify(diff.files.map((file) => [file.path, file.patch.length]))}`,
+    );
     assert.throws(
       () =>
         execFileSync('git', ['-C', repo.rootUri.fsPath, 'rev-parse', '--verify', 'HEAD'], {
