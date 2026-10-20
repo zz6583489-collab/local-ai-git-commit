@@ -4,7 +4,7 @@
 
 ## 安装
 
-运行 `npm install`、`npm run package`，然后在 VS Code 中执行“Extensions: Install from VSIX”，选择生成的 `ai-git-commit-0.1.5.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展。也可在源码目录按 F5 启动 Extension Development Host。
+从 [GitHub Releases](https://github.com/zz6583489-collab/local-ai-git-commit/releases) 下载对应版本的 VSIX，然后在 VS Code 中执行“Extensions: Install from VSIX”。首个 Release 发布前，也可运行 `npm ci`、`npm run package`，使用本地生成的 `ai-git-commit-0.1.5.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展；在源码目录按 F5 可启动 Extension Development Host。
 
 ## 首次配置
 
@@ -82,3 +82,5 @@
 - 打开 **AI Git Commit: Show Logs** 查看不含密钥和代码的事件日志。
 
 开发命令：`npm run compile`、`npm run watch`、`npm run lint`、`npm run test:unit`、`npm run test:integration`、`npm run test`、`npm run package`。集成测试用 `@vscode/test-electron` 启动 Extension Host；可设环境变量 `VSCODE_EXECUTABLE_PATH` 使用已安装 VS Code，避免下载。`.vscode/launch.json` 提供 F5 调试配置。所有 AI 单元测试使用 Mock HTTP，不需要真实 API Key。
+
+参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，安全漏洞请按 [SECURITY.md](SECURITY.md) 私密报告。
