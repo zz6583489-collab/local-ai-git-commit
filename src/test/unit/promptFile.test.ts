@@ -17,3 +17,23 @@ test('按仓库根目录读取提示词文件，并与附加规则合并', async
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('提示词文件不能是常见密钥文件', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'ai-git-secret-prompt-'));
+  try {
+    writeFileSync(join(root, '.env'), 'API_KEY=placeholder');
+    await assert.rejects(loadFormatPrompt(root, '.env', ''), /可能包含凭据/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('提示词文件内容出现疑似密钥时停止读取结果', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'ai-git-secret-content-'));
+  try {
+    writeFileSync(join(root, 'RULES.md'), `规则：${'sk-' + 'A'.repeat(32)}`);
+    await assert.rejects(loadFormatPrompt(root, 'RULES.md', ''), /可能包含凭据/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

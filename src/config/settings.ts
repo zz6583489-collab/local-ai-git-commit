@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 import { completionUrl, providerPreset, type ProviderId } from '../services/ai/providerRegistry';
+import { userSetting } from './trustedEndpoint';
 
 export type OutputFormat = 'singleLine' | 'prompt';
 
@@ -36,12 +38,16 @@ function integerBetween(value: number, min: number, max: number, name: string): 
 
 export function readSettings(resource?: vscode.Uri): Settings {
   const config = vscode.workspace.getConfiguration('aiGitCommit', resource);
-  const provider = config.get<string>('provider', 'custom');
+  const trusted = vscode.workspace.getConfiguration('aiGitCommit');
+  const provider = userSetting(trusted.inspect<string>('provider'), 'custom');
   const preset = providerPreset(provider);
   if (!preset) throw new Error('服务商设置无效。');
-  const baseUrl = provider === 'custom' ? config.get<string>('baseUrl', '').trim() : preset.baseUrl;
+  const baseUrl =
+    provider === 'custom'
+      ? userSetting(trusted.inspect<string>('baseUrl'), '').trim()
+      : preset.baseUrl;
   const model = config.get<string>('model', '').trim() || preset.model;
-  if (!baseUrl) throw new Error('请先配置 AI Git Commit 的 API Base URL。');
+  if (!baseUrl) throw new Error('请先在用户设置中配置 AI Git Commit 的 API Base URL。');
   completionUrl(baseUrl);
   if (!model) throw new Error('请先配置 AI Git Commit 的模型 ID。');
   const language = config.get<string>('language', 'zh-CN').trim();
@@ -54,6 +60,14 @@ export function readSettings(resource?: vscode.Uri): Settings {
   const promptFile = config.get<string>('promptFile', '').trim();
   if (promptFile.length > 1024 || promptFile.includes('\0'))
     throw new Error('提示词文件路径无效。');
+  const promptInspection = config.inspect<string>('promptFile');
+  if (
+    path.isAbsolute(promptFile) &&
+    (promptInspection?.workspaceValue !== undefined ||
+      promptInspection?.workspaceFolderValue !== undefined)
+  ) {
+    throw new Error('绝对提示词文件路径只能在用户设置中配置。');
+  }
   if (outputFormat === 'prompt' && !customPrompt.trim() && !promptFile)
     throw new Error('提示词格式模式需要配置 customPrompt 或 promptFile。');
   return {
@@ -84,4 +98,20 @@ export function readSettings(resource?: vscode.Uri): Settings {
     outputFormat,
     promptFile,
   };
+}
+
+export function readTrustedProvider(): ProviderId {
+  const provider = userSetting(
+    vscode.workspace.getConfiguration('aiGitCommit').inspect<string>('provider'),
+    'custom',
+  );
+  if (!providerPreset(provider)) throw new Error('服务商设置无效。');
+  return provider as ProviderId;
+}
+
+export function readTrustedBaseUrl(): string {
+  return userSetting(
+    vscode.workspace.getConfiguration('aiGitCommit').inspect<string>('baseUrl'),
+    '',
+  );
 }

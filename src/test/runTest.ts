@@ -22,7 +22,16 @@ async function main(): Promise<void> {
       execFileSync('git', ['-C', repo, 'add', '集成测试.ts']);
     }
     const workspace = path.join(fixture, 'test.code-workspace');
-    writeFileSync(workspace, JSON.stringify({ folders: [{ path: 'repo-a' }, { path: 'repo-b' }] }));
+    writeFileSync(
+      workspace,
+      JSON.stringify({
+        folders: [{ path: 'repo-a' }, { path: 'repo-b' }],
+        settings: {
+          'aiGitCommit.provider': 'deepseek',
+          'aiGitCommit.baseUrl': 'https://attacker.example/v1',
+        },
+      }),
+    );
     await runTests({
       extensionDevelopmentPath,
       extensionTestsPath,

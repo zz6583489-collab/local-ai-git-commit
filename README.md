@@ -4,13 +4,13 @@
 
 ## 安装
 
-运行 `npm install`、`npm run package`，然后在 VS Code 中执行“Extensions: Install from VSIX”，选择生成的 `ai-git-commit-0.1.4.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展。也可在源码目录按 F5 启动 Extension Development Host。
+运行 `npm install`、`npm run package`，然后在 VS Code 中执行“Extensions: Install from VSIX”，选择生成的 `ai-git-commit-0.1.5.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展。也可在源码目录按 F5 启动 Extension Development Host。
 
 ## 首次配置
 
 1. 执行 **AI Git Commit: Select Provider**，选择 OpenAI、DeepSeek、阿里云百炼、硅基流动或自定义服务商。
 2. 执行 **AI Git Commit: Configure Model**，填写可用于 Chat Completions 的模型 ID。部分预设提供默认模型，但服务商可能调整模型，请以其文档为准。
-3. 自定义服务商须设置 `aiGitCommit.baseUrl`，填写 API 根地址，例如 `https://example.com/v1`。扩展会在末尾添加 `/chat/completions`；已有完整路径不会重复添加。非本机 HTTP 地址会被拒绝。
+3. 自定义服务商须在**用户设置**中设置 `aiGitCommit.baseUrl`，填写 API 根地址，例如 `https://example.com/v1`。扩展会在末尾添加 `/chat/completions`；已有完整路径不会重复添加。非本机 HTTP 地址会被拒绝。`provider` 也只从用户设置读取，工作区无法更改密钥发送目标。若旧版本只在工作区设置了自定义地址，升级后需在用户设置中重新配置。
 4. 执行 **AI Git Commit: Set API Key**。输入框会遮蔽密钥，每个服务商的密钥分别存于 VS Code SecretStorage。可再次运行此命令更换密钥，通过 **Check API Key** 查看是否已配置，通过 **Delete API Key** 删除当前服务商密钥。密钥不能写在 `settings.json` 中。
 5. 可执行 **Test API Connection** 测试模型；此操作会向服务商发送一条不含代码的短消息，可能产生少量费用。
 
@@ -28,8 +28,8 @@
 
 | 设置                              | 默认值       | 说明                                                         |
 | --------------------------------- | ------------ | ------------------------------------------------------------ |
-| `aiGitCommit.provider`            | `custom`     | 服务商预设或自定义                                           |
-| `aiGitCommit.baseUrl`             | 空           | 自定义服务商的 API 根地址                                    |
+| `aiGitCommit.provider`            | `custom`     | 服务商预设或自定义；仅用户设置                               |
+| `aiGitCommit.baseUrl`             | 空           | 自定义服务商的 API 根地址；仅用户设置                        |
 | `aiGitCommit.model`               | 空           | 模型 ID；预设可能有默认值                                    |
 | `aiGitCommit.language`            | `zh-CN`      | 输出语言                                                     |
 | `aiGitCommit.timeout`             | `120000`     | 单次请求超时，毫秒                                           |
@@ -59,7 +59,7 @@
 }
 ```
 
-也可直接把规则写入 `aiGitCommit.customPrompt`，或用绝对路径指定规则文件。`promptFile` 的内容会发送给所选模型；相对路径只能指向该仓库内的文件，文件上限为 16 KiB。选择不同仓库时分别解析文件。默认 `singleLine` 模式仍强制单行；`prompt` 模式允许“标题、空行、功能列表”等多行正文，首行在 `conventionalCommits=true` 时必须为 `type(scope): 描述` 且不超过 80 字符，首行与正文之间必须空一行。提示词中的其他细节由模型遵循，插件无法机械验证任意自然语言规则。
+也可直接把规则写入 `aiGitCommit.customPrompt`。`promptFile` 的内容会发送给所选模型；相对路径只能指向该仓库内的文件，绝对路径仅允许在用户设置中配置，文件上限为 16 KiB。选择不同仓库时分别解析文件。默认 `singleLine` 模式仍强制单行；`prompt` 模式允许“标题、空行、功能列表”等多行正文，首行在 `conventionalCommits=true` 时必须为 `type(scope): 描述` 且不超过 80 字符，首行与正文之间必须空一行。提示词中的其他细节由模型遵循，插件无法机械验证任意自然语言规则。
 
 规则文件中要求额外读取本次所选差异之外的文件、运行命令或查看历史的步骤不会执行；代码变更依据只来自本次选定的暂存区或工作区差异。
 
@@ -68,6 +68,8 @@
 扩展按文件提取所选差异和增删行数。小差异一次生成；大型差异按完整行与近似 Token 预算分组，逐组生成事实摘要，再根据全部摘要和文件清单汇总。局部摘要没有固定长度上限：总量适合最终请求时直接使用；超出最终预算时才调用模型压缩摘要，不重复发送原始代码差异。摘要及压缩合计受 `maxSummaryCalls` 限制，预算或次数仍不足时会明确报错。Token 估算用于分组，实际用量以服务商计算为准。依赖锁文件（如 `package-lock.json`、`pnpm-lock.yaml`）只发送文件名与变更统计，不发送完整补丁；扩展会提示这一分析限制，依赖意图由同批变更的清单文件辅助判断。二进制文件同样只能分析文件级元数据。初始局部摘要分组超过次数上限时，扩展会在请求前告知预计调用次数，并允许仅本次继续；单行预算、单文件 32 MiB 读取限制或过高的请求次数仍会明确报错。每次模型请求都可能收费。
 
 **所选仓库的暂存差异，或在暂存区为空时的未暂存及未跟踪文件内容，会发送到所选服务商的 API 地址。** 使用自定义 Base URL 时，请自行确认服务商的隐私政策和费用。扩展日志仅记录固定事件，不记录密钥、请求体、响应体或代码差异。Git 差异被当作不可信数据，提示词要求模型忽略其中的指令。
+
+发送前会检查常见密钥文件名与疑似凭据内容；命中时停止请求并显示不含密钥的错误。`.gitignore` 和 `.vscodeignore` 也排除 `.env`、密钥和证书文件，分别防止误提交和误打包；已被 Git 跟踪的文件不会因忽略规则自动移除。检测规则可能漏报未知格式，也可能误报测试用的假密钥；请勿把真实密钥写入代码或提示词文件。
 
 ## 排查与开发
 

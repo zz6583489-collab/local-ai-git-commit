@@ -7,6 +7,7 @@ import { isDependencyLockfile } from '../services/commit/diffClassification';
 import { loadFormatPrompt } from '../services/commit/promptFile';
 import { GitService } from '../services/git/gitService';
 import { getGitApi, selectRepository } from '../services/git/repositoryManager';
+import { assertSafeDiff, assertSafeText } from '../services/security/secretGuard';
 import type { GitRepository } from '../types/git';
 
 export class CommitCommands {
@@ -35,6 +36,7 @@ export class CommitCommands {
     try {
       const settings = readSettings(repo.rootUri);
       const formatPrompt = await loadFormatPrompt(root, settings.promptFile, settings.customPrompt);
+      assertSafeText(formatPrompt);
       const key = await this.keys.get(settings.provider);
       if (!key) throw new Error('尚未配置当前服务商的 API Key，请执行 Set API Key 命令。');
       this.log('开始生成');
@@ -51,6 +53,7 @@ export class CommitCommands {
             const git = new GitService((await getGitApi()).git.path);
             const diff = await git.preferredDiff(root, controller.signal);
             if (controller.signal.aborted) return;
+            assertSafeDiff(diff);
             progress.report({
               message: diff.source === 'staged' ? '分析暂存区变更' : '暂存区为空，分析工作区变更',
             });

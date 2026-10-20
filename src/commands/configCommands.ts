@@ -1,14 +1,8 @@
 import * as vscode from 'vscode';
-import { readSettings } from '../config/settings';
+import { readSettings, readTrustedBaseUrl, readTrustedProvider } from '../config/settings';
 import { AiClient } from '../services/ai/aiClient';
 import { ApiKeyManager } from '../services/ai/apiKeyManager';
-import { providerPreset, providers, type ProviderId } from '../services/ai/providerRegistry';
-
-function currentProvider(): ProviderId {
-  const id = vscode.workspace.getConfiguration('aiGitCommit').get<string>('provider', 'custom');
-  if (!providerPreset(id)) throw new Error('服务商设置无效。');
-  return id as ProviderId;
-}
+import { providerPreset, providers } from '../services/ai/providerRegistry';
 
 export class ConfigCommands {
   constructor(
@@ -17,7 +11,7 @@ export class ConfigCommands {
   ) {}
 
   async setApiKey(): Promise<void> {
-    const id = currentProvider();
+    const id = readTrustedProvider();
     const value = await vscode.window.showInputBox({
       title: `设置 ${providerPreset(id)?.label} API Key`,
       prompt: '密钥仅存于 VS Code SecretStorage。暂存代码差异会发送给所选服务商。',
@@ -31,13 +25,13 @@ export class ConfigCommands {
   }
 
   async deleteApiKey(): Promise<void> {
-    await this.keys.delete(currentProvider());
+    await this.keys.delete(readTrustedProvider());
     this.log('密钥已删除');
     void vscode.window.showInformationMessage('当前服务商的 API Key 已删除。');
   }
 
   async checkApiKey(): Promise<void> {
-    const id = currentProvider();
+    const id = readTrustedProvider();
     const configured = await this.keys.has(id);
     void vscode.window.showInformationMessage(
       `${providerPreset(id)?.label} API Key ${configured ? '已配置' : '尚未配置'}。`,
@@ -60,7 +54,7 @@ export class ConfigCommands {
       const url = await vscode.window.showInputBox({
         title: '自定义 API Base URL',
         prompt: '暂存代码差异将发送到此服务商。请填写 HTTPS API 根地址。',
-        value: vscode.workspace.getConfiguration('aiGitCommit').get<string>('baseUrl', ''),
+        value: readTrustedBaseUrl(),
       });
       if (url !== undefined)
         await vscode.workspace
@@ -76,7 +70,7 @@ export class ConfigCommands {
     const current = vscode.workspace.getConfiguration('aiGitCommit').get<string>('model', '');
     const value = await vscode.window.showInputBox({
       title: '设置模型 ID',
-      value: current || providerPreset(currentProvider())?.model,
+      value: current || providerPreset(readTrustedProvider())?.model,
       prompt: '填写服务商提供的 Chat Completions 模型 ID。',
     });
     if (value === undefined) return;

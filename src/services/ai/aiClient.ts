@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import type { Settings } from '../../config/settings';
 import { completionUrl } from './providerRegistry';
+import { assertSafeText } from '../security/secretGuard';
 
 export class AiRequestError extends Error {
   constructor(
@@ -25,6 +26,7 @@ export class AiClient {
     apiKey: string,
     signal: AbortSignal,
   ): Promise<string> {
+    for (const message of messages) assertSafeText(message.content);
     const url = completionUrl(settings.baseUrl);
     const body: Record<string, unknown> = { model: settings.model, messages, stream: false };
     if (settings.sendTemperature) body.temperature = settings.temperature;

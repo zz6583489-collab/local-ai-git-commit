@@ -1,6 +1,8 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 import { execFileSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { CommitCommands } from '../../commands/generateCommit';
 import type { ApiKeyManager } from '../../services/ai/apiKeyManager';
 import { GitService } from '../../services/git/gitService';
@@ -44,8 +46,8 @@ export async function run(): Promise<void> {
 
   // 在真实 Extension Host + Git 仓库中，通过 Mock HTTP 验证完整生成链路。
   const configuration = vscode.workspace.getConfiguration('aiGitCommit');
-  const priorProvider = configuration.get<string>('provider');
-  const priorUrl = configuration.get<string>('baseUrl');
+  const priorProvider = configuration.inspect<string>('provider')?.globalValue;
+  const priorUrl = configuration.inspect<string>('baseUrl')?.globalValue;
   const priorModel = configuration.get<string>('model');
   const priorOutputFormat = configuration.get<string>('outputFormat');
   const priorPromptFile = configuration.get<string>('promptFile');
@@ -55,16 +57,21 @@ export async function run(): Promise<void> {
     () => {},
   );
   try {
-    await configuration.update('provider', 'custom', vscode.ConfigurationTarget.Workspace);
+    await configuration.update('provider', 'custom', vscode.ConfigurationTarget.Global);
     await configuration.update(
       'baseUrl',
       'https://example.test/v1',
-      vscode.ConfigurationTarget.Workspace,
+      vscode.ConfigurationTarget.Global,
     );
     await configuration.update('model', 'mock-model', vscode.ConfigurationTarget.Workspace);
     let requests = 0;
-    globalThis.fetch = async (_input, init) => {
+    globalThis.fetch = async (url, init) => {
       requests++;
+      assert.equal(
+        url,
+        'https://example.test/v1/chat/completions',
+        '工作区设置不得改写密钥的发送目标',
+      );
       assert.equal((init?.headers as Record<string, string>).Authorization, 'Bearer mock-key');
       return Response.json({ choices: [{ message: { content: 'feat(test): 添加暂存文件测试' } }] });
     };
@@ -123,13 +130,34 @@ export async function run(): Promise<void> {
     await handler.generate({ rootUri: other.rootUri });
     assert.equal(other.inputBox.value, detailed, '无暂存变更时应使用工作区文件并填写所选仓库');
     assert.equal(repo.inputBox.value, detailed, '工作区模式不得影响另一仓库');
+
+    await configuration.update(
+      'promptFile',
+      join(repo.rootUri.fsPath, 'CODEBUDDY.md'),
+      vscode.ConfigurationTarget.Workspace,
+    );
+    await assert.rejects(
+      handler.generate({ rootUri: repo.rootUri }),
+      /绝对提示词文件路径只能在用户设置中配置/,
+    );
+    await configuration.update('promptFile', 'CODEBUDDY.md', vscode.ConfigurationTarget.Workspace);
+
+    writeFileSync(join(repo.rootUri.fsPath, '.env'), 'DUMMY=1\n');
+    execFileSync('git', ['-C', repo.rootUri.fsPath, 'add', '.env']);
+    let unsafeRequests = 0;
+    globalThis.fetch = async () => {
+      unsafeRequests++;
+      return Response.json({ choices: [{ message: { content: detailed } }] });
+    };
+    await assert.rejects(handler.generate({ rootUri: repo.rootUri }), /可能包含凭据/);
+    assert.equal(unsafeRequests, 0, '敏感文件必须在网络请求前被拦截');
   } finally {
     handler.dispose();
     globalThis.fetch = priorFetch;
     repo.inputBox.value = prior;
     other.inputBox.value = otherPrior;
-    await configuration.update('provider', priorProvider, vscode.ConfigurationTarget.Workspace);
-    await configuration.update('baseUrl', priorUrl, vscode.ConfigurationTarget.Workspace);
+    await configuration.update('provider', priorProvider, vscode.ConfigurationTarget.Global);
+    await configuration.update('baseUrl', priorUrl, vscode.ConfigurationTarget.Global);
     await configuration.update('model', priorModel, vscode.ConfigurationTarget.Workspace);
     await configuration.update(
       'outputFormat',

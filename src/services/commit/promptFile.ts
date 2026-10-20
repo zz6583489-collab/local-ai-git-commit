@@ -1,5 +1,6 @@
 import { open, realpath } from 'node:fs/promises';
 import * as path from 'node:path';
+import { assertSafePath, assertSafeText } from '../security/secretGuard';
 
 const maxPromptFileBytes = 16 * 1024;
 
@@ -9,6 +10,7 @@ export async function loadFormatPrompt(
   customPrompt: string,
 ): Promise<string> {
   if (!fileSetting) return customPrompt.trim();
+  assertSafePath(fileSetting);
   const absolute = path.isAbsolute(fileSetting);
   const resolved = absolute ? fileSetting : path.resolve(root, fileSetting);
   if (!absolute) {
@@ -45,5 +47,6 @@ export async function loadFormatPrompt(
     throw new Error('无法读取提示词文件，请检查所选仓库的 promptFile 路径。');
   }
   if (!content.trim()) throw new Error('提示词文件为空。');
+  assertSafeText(content);
   return [content.trim(), customPrompt.trim()].filter(Boolean).join('\n\n附加规则：\n');
 }

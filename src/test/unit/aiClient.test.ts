@@ -143,3 +143,22 @@ test('密钥存储故障不会把原始异常和密钥输出给用户', async ()
     });
   }
 });
+
+test('请求体包含疑似密钥时，发出网络请求前终止', async () => {
+  let calls = 0;
+  const client = new AiClient(async () => {
+    calls++;
+    return Response.json({ choices: [{ message: { content: 'ok' } }] });
+  });
+  const dummy = `sk-${'A'.repeat(32)}`;
+  await assert.rejects(
+    client.complete(
+      [{ role: 'user', content: `文件内容：${dummy}` }],
+      settings,
+      'safe-auth-key',
+      new AbortController().signal,
+    ),
+    /可能包含凭据/,
+  );
+  assert.equal(calls, 0);
+});
