@@ -1,4 +1,5 @@
 .vscode/**
+.github/**
 .vscode-test/**
 src/**
 node_modules/**
@@ -9,6 +10,8 @@ out/test/**
 eslint.config.mjs
 tsconfig.json
 package-lock.json
+SECURITY.md
+CONTRIBUTING.md
 .prettier*
 .env
 .env.*
