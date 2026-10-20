@@ -4,7 +4,7 @@
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/zz6583489-collab/local-ai-git-commit/releases) 下载对应版本的 VSIX，然后在 VS Code 中执行“Extensions: Install from VSIX”。首个 Release 发布前，也可运行 `npm ci`、`npm run package`，使用本地生成的 `ai-git-commit-0.1.5.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展；在源码目录按 F5 可启动 Extension Development Host。
+从 [GitHub Releases](https://github.com/zz6583489-collab/local-ai-git-commit/releases) 下载对应版本的 VSIX，然后在 VS Code 中执行“Extensions: Install from VSIX”。也可从源码运行 `npm ci`、`npm run package`，安装本地生成的 `ai-git-commit-0.1.5.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展；在源码目录按 F5 可启动 Extension Development Host。
 
 ## 首次配置
 
