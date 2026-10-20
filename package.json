@@ -222,7 +222,7 @@
     "@types/node": "^24.0.0",
     "@types/vscode": "^1.96.0",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.6.0",
+    "@vscode/vsce": "^4.0.0",
     "eslint": "^9.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.9.0",
