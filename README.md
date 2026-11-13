@@ -1,10 +1,10 @@
 # AI Git Commit
 
-用云端 Chat Completions 模型为 Git 变更生成提交信息，并填写到 VS Code 原生 SCM 输入框。有暂存变更时只分析暂存区；暂存区为空时分析工作区的未暂存修改和未跟踪文件。支持多仓库、中文 Conventional Commits、大型差异分块、取消生成。扩展不会执行 `git add`、`git commit` 或 `git push`。
+用云端 Chat Completions 模型为 Git 变更生成提交信息，并填写到 VS Code 原生 SCM 输入框。有暂存变更时只分析暂存区；暂存区为空时分析工作区的未暂存修改和未跟踪文件。支持多仓库、中文 Conventional Commits、大型差异分块、取消生成。扩展还提供本地 TXT 小说阅读器。扩展不会执行 `git add`、`git commit` 或 `git push`。
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/zz6583489-collab/local-ai-git-commit/releases) 下载对应版本的 VSIX，然后在 VS Code 中执行“Extensions: Install from VSIX”。也可从源码运行 `npm ci`、`npm run package`，安装本地生成的 `ai-git-commit-0.1.5.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展；在源码目录按 F5 可启动 Extension Development Host。
+从 [GitHub Releases](https://github.com/zz6583489-collab/local-ai-git-commit/releases) 下载对应版本的 VSIX，然后在 VS Code 中执行“Extensions: Install from VSIX”。也可从源码运行 `npm ci`、`npm run package`，安装本地生成的 `ai-git-commit-<版本号>.vsix`。要求 VS Code 1.96+、本地 Git 和启用的内置 Git 扩展；在源码目录按 F5 可启动 Extension Development Host。
 
 ## 首次配置
 
@@ -71,6 +71,18 @@
 
 发送前会检查常见密钥文件名与疑似凭据内容；命中时停止请求并显示不含密钥的错误。`.gitignore` 和 `.vscodeignore` 也排除 `.env`、密钥和证书文件，分别防止误提交和误打包；已被 Git 跟踪的文件不会因忽略规则自动移除。检测规则可能漏报未知格式，也可能误报测试用的假密钥；请勿把真实密钥写入代码或提示词文件。
 
+## 本地小说阅读器
+
+扩展内置一个可选的 TXT 小说阅读器。执行 **AI Git Commit: 导入小说目录** 选择本地目录：一个目录视为一本书，目录直接包含的所有 `.txt` 文件按文件名中的数字自然排序，每个文件是一章。导入后会在编辑区打开阅读标签。已由旧版收录的单个 TXT 再次打开时会迁移到所属目录，并尽量保留阅读位置。
+
+关闭阅读标签后，点击 VS Code 状态栏的 **继续阅读** 可直接打开最近一本；也可以在命令面板执行 **AI Git Commit: 继续阅读上一本小说**。执行 **AI Git Commit: 打开小说阅读器** 会显示可搜索的书籍列表。同一本书重复打开会定位到已有阅读标签。
+
+阅读标签提供章节目录、上一章/下一章、连续滚动、字号、行距、正文宽度和编码切换。顶部显示当前章节进度，滚动到章节结尾会达到 100%；悬停可查看全书进度。阅读位置按书籍保存；关闭标签或重启 VS Code 后重新打开，会恢复到上次阅读位置。阅读设置保存在扩展的全局状态中。每个 TXT 默认独立识别 UTF-8、带 BOM 的 UTF-8 或 GB18030；出现乱码时可在阅读标签右上角切换为统一指定编码。
+
+书架仅保存书名、原目录路径、编码、阅读进度和文件版本信息，不复制或修改原书。目录移动后，可执行 **AI Git Commit: 重新定位小说目录**；执行 **AI Git Commit: 从书架移除小说** 只删除书架记录，不删除源文件。首版读取目录直接包含的 TXT，不递归子目录；最多 2000 个章节文件、合计 32 MiB。EPUB、在线书源和同步尚未提供。
+
+阅读器在没有 Git 仓库、没有 AI Key 或模型配置时也可使用，但本扩展仍依赖已启用的 VS Code 内置 Git 扩展。阅读正文仅在本地处理，不发送到 AI 服务商，也不写入扩展日志。
+
 ## 排查与开发
 
 - “没有暂存或工作区变更”：所选仓库当前没有可生成的变更；被 `.gitignore` 忽略的未跟踪文件不会读取。
@@ -84,3 +96,16 @@
 开发命令：`npm run compile`、`npm run watch`、`npm run lint`、`npm run test:unit`、`npm run test:integration`、`npm run test`、`npm run package`。集成测试用 `@vscode/test-electron` 启动 Extension Host；可设环境变量 `VSCODE_EXECUTABLE_PATH` 使用已安装 VS Code，避免下载。`.vscode/launch.json` 提供 F5 调试配置。所有 AI 单元测试使用 Mock HTTP，不需要真实 API Key。
 
 参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，安全漏洞请按 [SECURITY.md](SECURITY.md) 私密报告。
+
+## 发布新版本
+
+在 `main` 上更新 `package.json` 和 `package-lock.json` 的版本号，并在 `CHANGELOG.md` 顶部添加同版本的 `## X.Y.Z` 小节。合并并推送后，等待 CI 通过，再推送指向该提交的 `vX.Y.Z` 标签，例如：
+
+```powershell
+npm version 0.1.8 --no-git-tag-version
+# 更新 CHANGELOG.md，提交并推送 main，等待 CI 通过
+git tag v0.1.8
+git push origin v0.1.8
+```
+
+标签推送会触发 [Release 工作流](.github/workflows/release.yml)。它要求标签版本与 `package.json` 一致、标签提交位于 `main`、更新日志有对应条目；随后执行编译、Lint、格式检查、单元与 Extension Host 集成测试，打包 VSIX。全部通过后才会自动发布 GitHub Release，附带 VSIX、SHA-256 校验文件，并使用该版本更新日志作为发布说明。失败时不会发布 Release；无需额外配置个人访问令牌。

@@ -1,11 +1,14 @@
 .vscode/**
 .github/**
+.omx/**
 .vscode-test/**
 src/**
+scripts/**
 node_modules/**
 *.vsix
 **/*.map
 out/test/**
+out/test-tmp/**
 .gitignore
 eslint.config.mjs
 tsconfig.json

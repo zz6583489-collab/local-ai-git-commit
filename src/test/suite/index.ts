@@ -7,6 +7,7 @@ import { CommitCommands } from '../../commands/generateCommit';
 import type { ApiKeyManager } from '../../services/ai/apiKeyManager';
 import { GitService } from '../../services/git/gitService';
 import { getGitApi, selectRepository } from '../../services/git/repositoryManager';
+import { runReaderIntegration } from './reader';
 
 export async function run(): Promise<void> {
   const extension = vscode.extensions.getExtension('local-ai-git-commit.ai-git-commit');
@@ -175,4 +176,5 @@ export async function run(): Promise<void> {
     );
     await configuration.update('promptFile', priorPromptFile, vscode.ConfigurationTarget.Workspace);
   }
+  await runReaderIntegration();
 }

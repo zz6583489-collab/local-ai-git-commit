@@ -1,0 +1,230 @@
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  color: var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground));
+  background: var(--vscode-button-secondaryBackground, transparent);
+  border: 1px solid var(--vscode-button-border, var(--vscode-panel-border));
+  border-radius: 4px;
+  padding: 5px 9px;
+}
+
+button:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground, var(--vscode-list-hoverBackground));
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+#content:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+#readerShell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+}
+
+#readerToolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 46px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+}
+
+#title {
+  flex: 1 1 180px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#progress {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+#readerControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  width: 100%;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+#readerControls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#readerControls input {
+  width: 64px;
+  padding: 2px 4px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 3px;
+}
+
+#readerControls select {
+  padding: 2px 4px;
+  color: var(--vscode-dropdown-foreground);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 3px;
+}
+
+#readerMain {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+#toc {
+  overflow: auto;
+  padding: 12px 8px;
+  border-right: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+}
+
+.reader-toc-heading {
+  margin: 2px 8px 10px;
+  color: var(--vscode-sideBarTitle-foreground, var(--vscode-editor-foreground));
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reader-toc-item {
+  display: block;
+  width: 100%;
+  margin: 1px 0;
+  padding: 7px 8px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+}
+
+.reader-toc-item.active {
+  color: var(--vscode-list-activeSelectionForeground, var(--vscode-editor-foreground));
+  background: var(--vscode-list-activeSelectionBackground, var(--vscode-list-hoverBackground));
+}
+
+#content {
+  overflow: auto;
+  min-width: 0;
+  padding: clamp(20px, 4vw, 48px);
+  outline: none;
+  scroll-behavior: auto;
+  font-family: system-ui, 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: var(--reader-font-size, 18px);
+  line-height: var(--reader-line-height, 1.8);
+}
+
+.reader-chunk {
+  display: flow-root;
+  max-width: var(--reader-width, 800px);
+  margin: 0 auto;
+}
+
+.reader-paragraph {
+  min-height: 1em;
+  margin: 0 0 0.7em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#error {
+  padding: 8px 14px;
+  color: var(--vscode-errorForeground);
+  background: var(--vscode-inputValidation-errorBackground, var(--vscode-editor-background));
+  border-top: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-panel-border));
+}
+
+#error[hidden] {
+  display: none;
+}
+
+#readerShell.toc-collapsed #readerMain {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#readerShell.toc-collapsed #toc {
+  display: none;
+}
+
+@media (max-width: 780px) {
+  #readerMain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #toc {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(260px, 75vw);
+    box-shadow: 4px 0 14px rgba(0, 0, 0, 0.18);
+  }
+
+  #readerMain {
+    position: relative;
+  }
+
+  #content {
+    padding: 20px;
+  }
+}

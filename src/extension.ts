@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { CommitCommands } from './commands/generateCommit';
 import { ConfigCommands } from './commands/configCommands';
 import { ApiKeyManager } from './services/ai/apiKeyManager';
+import { ReaderCommands } from './reader/readerCommands';
 
 let commitCommands: CommitCommands | undefined;
 
@@ -11,6 +12,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const keys = new ApiKeyManager(context.secrets);
   commitCommands = new CommitCommands(keys, log);
   const config = new ConfigCommands(keys, log);
+  context.subscriptions.push(new ReaderCommands(context));
   const showError = (error: unknown): void => {
     // HTTP 层只抛出固定的中文原因；不记录异常对象、密钥、请求体或 Diff。
     log('操作失败');

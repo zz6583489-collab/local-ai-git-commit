@@ -1,8 +1,8 @@
 {
   "name": "ai-git-commit",
   "displayName": "AI Git Commit",
-  "description": "用云端 AI 为 Git 变更生成中文 Conventional Commit 信息",
-  "version": "0.1.5",
+  "description": "用云端 AI 为 Git 变更生成中文 Conventional Commit 信息，附带本地 TXT 小说阅读器",
+  "version": "0.1.7",
   "publisher": "local-ai-git-commit",
   "license": "MIT",
   "repository": {
@@ -84,6 +84,26 @@
       {
         "command": "aiGitCommit.showLogs",
         "title": "AI Git Commit: Show Logs"
+      },
+      {
+        "command": "aiGitCommit.reader.open",
+        "title": "AI Git Commit: 打开小说阅读器"
+      },
+      {
+        "command": "aiGitCommit.reader.resume",
+        "title": "AI Git Commit: 继续阅读上一本小说"
+      },
+      {
+        "command": "aiGitCommit.reader.import",
+        "title": "AI Git Commit: 导入小说目录"
+      },
+      {
+        "command": "aiGitCommit.reader.remove",
+        "title": "AI Git Commit: 从书架移除小说"
+      },
+      {
+        "command": "aiGitCommit.reader.relocate",
+        "title": "AI Git Commit: 重新定位小说目录"
       }
     ],
     "menus": {
